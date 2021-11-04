@@ -15,6 +15,392 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 
+## Overview Video 
 
++ Forecasting with AR model
++ MA Model: How do we estimate the MA model?
+
+    + The book doesn't talk about how to estimate the model, we typically leave that work to R to do for us
+    + parameters: mu and theta
+        + 1 explanatory variable, eps_t
+        + eps_t can be represented with information set along with mu and theta
+        + Use Maximum Likelihood Error to estimate mu and theta
+
++ Find a TS dataset and book meeting with Dr. Xie
+
+
+## Chapter 7 Lecture Videos - Forecasting with AR Models
+
++ Increase in unemployment numbers for some period, and decrease for other periods
++ Fluctuation economy <- expansion and recession (micro economy) - boom and bust times
++ business cycle <- macro economy (unemployment rate, poverty rate, etc.)
++ Seasonality <- periodical patterns associated with the calendar
+
++ AR(1) Process
+
+    + dependent variable Y_t
+    + only need to estimate one coefficient, phi
+        + as phi increases, the TS becomes more "sticky"
+        + mean will stay at some level without returning back to mean
+        + if phi < 1 <- stationary (small phi)
+            + ACF fades away quickly
+        + elif phi > 1 <- random walk (big phi)
+            + ACF decays slowly
+    + MA model is "short memory"
+        + After period 1, ACF becomes 0. This is a sharp cutoff
+        
++ AR(2) Process
+
+    + Regress Y_t on past two periods
+        + this yields 2 coefficients
+        + sum of 2 coefficients <- persistency parameter
+            + As persistency parameter increases, the process becomes more "sticky"
+                + if persistency parameter == 1 <- random walk
+            + As the persistency parameter decreases, it returns to the mean more often
+            
+    + ACF gradually fades away
+        + when persistency parameter is small, ACF fades away faster
+        + when persistency parameter is large, ACF lingers longer (ACF sticky)
+        + when first parameter is negative, ACF oscilates (positive, negative, positive, negative)
+
++ Summary
+
+    + AR process: represents current values with past values
+    + AR process are not all stationary processes
+        + if persistency parameter < 1: stationary
+        + if persistency parameter == 1: random walk
+    + Determing if TS model is a cycle or seasonality
+
+## Chapter 7 R Instructions
+
+```{r}
+# load libraries
+library(readxl)
+library(forecast) # use package forecast
+```
+
+### Part I: simulation AR TS with and without seasonality
+
++ make simulations of many TS with and without seasonality
+
+```{r}
+
+y <- numeric(200)  # generate a vector of 200 zeros
+
+# skip the 1st observation, hence [2:200]
+y[2:200] = arima.sim(n=199, list(ar=0.4), innov=rnorm(199, 1, 0.5))  # generate AR(1) (leave the first obs as zero)
+plot.ts(y)
+```
+
+**Comments**
+
++ Using AR(1) model
+
+    + list(ar=0.4) <- this means it's an AR(1) model because only 1 coefficient
+
+
+
+```{r}
+# AR(2) process
+y <- numeric(200) #generate a vector of 200 zeros
+
+y[3:200] = arima.sim(n=198, list(ar = c(1, -.5)),innov = rnorm(198, 1, 1)) 
+
+plot.ts(y)
+
+```
+
+**Comments**
+
++ innov <- error term
+
+    + normal distribution
+    + mean = 1
+    + stdev = 1
+    
++ since AR(2), take y[3:200]
+
+```{r}
+# AR(2) model with seasonality
+y <- numeric(84) # generate a vector of 84 zeros
+
+y[5:84] = arima.sim(n=80, list(ar=c(0, 0, 0, 0.8)), innov = rnorm(80, 0, 0.5))
+
+plot.ts(y)
+```
+
+**Comments**
+
++ ar=c(0, 0, 0, .8) <- (Q1, Q2, Q3, Q4). hence, seasonality since dealing with annual quarters
++ First 4 elements are 0, then start with the 5th element, hence [5:84]
+
+```{r}
+# AR(8) model, using seasonalities
+y2 <- numeric(84) # generate a vector of 84 zeros
+
+y2[9:84] = arima.sim(n=76, list(ar = c(0, 0, 0, 0.5, 0, 0, 0, 0.3)), innov = rnorm(76, 0, 0.5)) 
+
+plot.ts(y2)
+```
+
+**Comments**
+
++ list(ar=c...) <- mimics seasonality for 4 quarters for 2 years. 
++ So 8 quarters with correlations on Q4 of both years
+
+```{r}
+# Using MA model
+y3 <- 2 + arima.sim(n=84, list(ma=c(0, 0, 0, 0.9)), innov = rnorm(84, 0, 0.5)) # generate S-MA(1)
+
+plot.ts(y3)
+
+```
+
+**Comments**
+
++ Correlated with Q4 of last year
++ Using Moving Average because 'list(ma=c(...))
+
+```{r}
+
+y4 <- 2 + arima.sim(n=84, list(ma=c(0, 0, 0, -1, 0, 0, 0, 0.25)), innov = rnorm(84, 0, 0.5)) # generate S-MA(2)
+
+plot.ts(y4)
+
+```
+
+**Comments**
+
++ Data of this quarter to be correlated with the same quarter of last year and 2 years ago
+
+    + list(ma=c(........))
+    + MA(8) model because 8 coefficients 
+
+### Part II: estimation 
+
+```{r}
+# read in data
+data <- read_excel("../02_raw_data/Figure7_11_inflation.xls")
+
+# declare CPI_GR as (yearly) time series (1913-2016)
+CPI_GR <- ts(data$CPI_Growth, frequency=1, start=c(1913)) 
+
+# plot the data
+plot(CPI_GR)
+```
+
+**Comments**
+
++ Looks like first and possibly second lags are extreme oscilations
++ Later mellows out and stays positive
++ Making forecast of last 6 obs
++ Use obs 1-85 as estimation sample
+
+
+```{r}
+# restrict the sample of CPI_GR up to 90th obs (i.e. 2003 year)
+CPI_GRr <- ts(data$CPI_Growth[1:85], frequency=1, start=c(1913))  # obs 1-85 is estimation sample
+
+plot(CPI_GRr)
+```
+
+**Comments**
+
++ This looks identical to the previous plot
++ only difference is this one takes a slice from obs 1-85 (estimation sample)
++ There are 91 obs in this dataset
+
+
+```{r}
+# in-sample AR(2) estimation (1913-2003)
+model <- arima(CPI_GRr, order=c(2, 0, 0))
+
+# see the estimation output
+model 
+
+```
+
+**Comments**
+
++ AR1 and AR2 coefficients 
++ Are these persistency parameters?
++ AR2 is negative. This means that there should be an oscillation somewhere
++ Data is positively correlated with last period (ar1 = 0.7919)
++ Negatively correlated with 2 periods ago (ar2 = -0.2466)
+
+### Part III: Forecasting
+
+```{r}
+# forecasting code
+
+# dynamic forecast for 6 steps ahead (h=6)
+fCPI_GRr <- forecast(model, h=6)  # >>> list of 10
+
+# forecast summary
+summary(fCPI_GRr) 
+
+# plot the forecast
+plot(fCPI_GRr, include=10) 
+
+# add the actual series to the plot (in magenta color)
+# need to run the chunk to see this
+lines(CPI_GR, col="red") 
+
+```
+
+**Comments**
+
++ Makes 6 forecasts
++ 1, 2, 3, 4, 5, 6 steps ahead, hence h=6
++ 6 point forecasts
++ Blue line is point h forecasts
++ Dark blue shading == 95% CI
++ Gray shading == 80% CI
+
+### Part IV: estimation of timeseries with seasonality
+
+```{r}
+# read in another dataset
+data <- read_excel("../02_raw_data/Figure7_19_constructionchanges.xls")
+
+# declare change_CONST as (monthly) time series
+change_CONST <- ts(data$ConstructionChanges, frequency=12, start=c(2002, 1))
+
+# plot the data
+plot(change_CONST)
+
+```
+
+**Comments**
+
++ data is monthly, with 109 obs
++ we use the entire dataset as estimation sample to make the 12 step forecast (12 months)
++ Looks like seasonality to me
++ spikes in months 1 and 3
++ low points in month 12
+
+
+```{r}
+# models
+# AR(1) & S-AR(1) estimation
+model <- arima(change_CONST, order=c(1, 0, 0), seasonal=list(order=c(1, 0, 0), period=12))  # monthly data (period=12)
+
+# see the estimation output
+model
+
+# Akaike IC
+AIC(model) 
+
+# Bayesian IC
+BIC(model) 
+```
+
+**Comments**
+
++ Coefficients: 
+
+    + ar1 <- y_t-1 (== 0.4524)
+        + positive coefficient
+        + monthly construction growth rate is positively correlated with growth rate of last month
+    + sar1 <- t_t-12 (==0.9034)
+        + more positively correlated with the same month of last year (**aha! seasonality**)
+    
+    
++ AR1 and SAR1 coefficients in 'model'
++ What is 'IC'?
+
+    + I...something Coefficient?
+    + AIC vs. BIC
+    
+### Part V: Forecasting of timeseries with seasonality
+
+```{r}
+
+# dynamic forecast for 12 steps ahead
+fchange_CONST <- forecast(model, h=12) 
+
+# forecast summary
+summary(fchange_CONST) 
+
+# plot the forecast
+plot(fchange_CONST, include=24) 
+```
+
+**Comments**
+
++ Left side is the entire dataset (estimation sample)
++ blue lines are the 12 month forecasts with 90% CI and 80% CI
+
+### Summary
+
++ Use AR process to generate TS
++ How to use AR model and MA to make estimation and forecasts of TS with and without seasonality
+
+
+## Chapter 6 External Videos - AR Process
+
+### Autoregressive Model
+
++ AR processes are very well suited to model cyclical fluctuations
++ Cycle <- fluctuations in the data that happen at periodic intervals
++ Expansion <- positive growth in economic output
++ Recession <- negative or slow growth
++ Bubbles <- exuberant prices
++ Busts <- rapid price decline
++ inflation <- rapid price growth
++ Deflation <- severe price decline
++ deterministic cycle <- common in physical sciences
+
+    + right hand side of equation is a function of time
+    
++ Stochastic cycle <- prevalent in economics and business data
+
+    + a cycle is stochastic when it is generated by random variables
+    + never a function of time
+
++ ACF informs about the dependence between random variables in different periods of time
++ the main question in a linear regression is to find out the conditional mean of the variable of interest
++ Autoregressive <- regression model in which the dependent variable and the regressors belong to the same stochastic process
++ For each AR(order) process, we ask the same 3 questions:
+
+    1. WHat does a time series of an AR process look like
+    2. What do the correpsonding autocorrelation functions look like?
+    3. What is the optimal forecast?
+    
++ AR(1) Process
+
+    + AC decays smoothly toward 0
+    + PAC has ONE (1) relevant spike
+    + phi <- persistence parameter
+    
++ Autocorrelation functions of an AR(1) process has 3 distinctive features:
+
+    1. Some sampling error. AC and PAC functions are estimated
+    2. AC decreases exponentially toward 0, Decay is faster when persistence parameter (phi) is small. Higher phi has larger autocorrelations. Estimated correlations are practically the same as the population autocorrelations
+    3. PACF characterzed by only one spike rho_k for k > 1 is practically 0
+
++ Density Forecast <- conditional probability density function of the process at the future date
+
++ Forecasting with an AR(1) is limited by the magnitude of the persistence parameter
+
+    + good to forecast short/medium term
+    + in long term, the forecast converges to the unconditional mean of the process
+
+### AR(1) Process Introduction and Example
+
+### AR(1) Process - conditions for stationary 
+
+### AR(1) Process - conditions for stationary
+
+### AR(1) Process - conditions for stationary
+
+### AR(1) vs. MA(1) processes
+
+### AR(1) vs. MA(1) processes
+
+### Partial vs Total Autocorreltion
+
+
+## Week 6 video on my notes
 
 
