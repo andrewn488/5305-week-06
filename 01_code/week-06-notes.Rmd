@@ -386,21 +386,110 @@ plot(fchange_CONST, include=24)
     + good to forecast short/medium term
     + in long term, the forecast converges to the unconditional mean of the process
 
-### AR(1) Process Introduction and Example
+## External Resources - AR Process
 
-### AR(1) Process - conditions for stationary 
+### AR(1) Process Introduction and Milk Example
 
-### AR(1) Process - conditions for stationary
++ Autoregressive: it's a regression. Trying to predict something based on other things
++ Auto: Trying to predict something based on past values of that same thing
++ If we can capture a pattern, it's easier to forecast an accurate prediction
++ If a simpler model can do the same job as a complex model, we prefer the simple model
++ PACF:
 
-### AR(1) Process - conditions for stationary
+    + PACF of lag_3 is the direct correlation of quantity demanded 3 periods ago
+        + M_t-3 direct effect on M_t
+    + Only want to keep the lags that are high in magnitude (significant - outside the dotted bands)
+    + Only include lags that are significant in our model. Throw everything else out
+
+### AR(1) Process 
+
++ Autoregressive because X_t-1 is regressed on itself
++ Order 1 because only X_t-1 coefficient is included in the model. If X_t-3 were included, it would be AR(3)
++ A shock can have persistent effects
++ MA(1) process only has an effect that lasts for 2 time periods
+    
+    + where the shock occurs and for the next period
+    + AR(1) process, the shock lasts infinitely
+
+### AR(1) Process - properties
+
++ Stationary weakly dependent
+
+    1. Must have a constant mean
+        + Expectation of X_t is constant
+        + Expectation of the first term of the series == 0
+
+### AR(1) Process - properties
+
++ a bunch of math proofs
+
++ modulus of rho is less than 1
+
+### AR(1) Process - properties
+
++ Conditions are both covariance and weakly dependent
+
++ a bunch of math proofs
+
++ finite covariance structure: abs(rho) < 1
+
++ correlation = cov(X_t, X_t+h) / var(X_t)
+
+    + must == rho**h
 
 ### AR(1) vs. MA(1) processes
 
-### AR(1) vs. MA(1) processes
++ Determine if we have AR(1) or MA(1)
 
-### Partial vs Total Autocorreltion
+1. Plot the series
 
+    + must have constant mean at 0
+        + if not, it can't be either AR(1) or MA(1)
+    + variance of process must be constant over time
+    
++ AR(1) <- correlation = rho**h
+
+    + for AR(1) process, correlation exponentially declines
+    + after finite number of lags, correlation should be almost 0
+    
++ MA(1) <- correlation = theta, h=1 or 1, h>1
+
+    + for MA(1) process, correlation drops to almost 0 after the first lag
+    + allows for estimation of parameter theta
+
+
+### Partial vs Total Correlogram
+
++ Total
+    
+    + Correlation between X_t regressed on itself
+    + AR(1) decreases exponentially
+    + MA(1) sharp decrease below significance level after first lag
+
++ PACF
+
+    + find the correlation of a variable with itself and subtract it from the model
+    + then plot the residual 
+    + AR(1) has strong first autocorrelation at first lag
+        + Following lags will sharply decrease close to 0
+    + AR(2) strong correlation at 1st and 2nd lag
+        + Following lags will sharply decrease close to 0 after 2nd lag (since AR(2))
 
 ## Week 6 video on my notes
+
+### The stationarity of AR(1) process
+
++ MA process is always stationary
++ This is not true for AR process
++ When dealing with AR process, use *recursive* method to do something with phi
++ if m approaches infinity, abs(phi) < 1
++ all kinds of maths going on
++ AR(1) process is stationary
+
+### Optimal forecast of AR(1)
+
++ h=1 <- horizon = 1
+
+
 
 
