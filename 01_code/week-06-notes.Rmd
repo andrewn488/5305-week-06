@@ -489,7 +489,17 @@ plot(fchange_CONST, include=24)
 ### Optimal forecast of AR(1)
 
 + h=1 <- horizon = 1
++ difference between realization and forecast
++ density forecast - make assumption that epsilon is normally distributed
 
+    + optimal density forecast is also a normal distribution
 
++ all kinds of maths stuffs going on here
++ h=s <- what will be the forecasts? "s steps ahead"
++ density forecast - normally distributed mu_t+s/t
 
-
+    + when s goes to infinity, we get normal distribution
+    + unconditional mean and variance
+    + AR(1) TS is a short memory process
+        + when period s goes to infinity, then the information set will not have any prediction power
+        + optimal forecast converts to **unconditional mean and variance**
