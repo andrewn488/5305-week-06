@@ -503,3 +503,34 @@ plot(fchange_CONST, include=24)
     + AR(1) TS is a short memory process
         + when period s goes to infinity, then the information set will not have any prediction power
         + optimal forecast converts to **unconditional mean and variance**
+        
+### Summary
+
++ Differencing <- process of computing the differences between consecutive observations
+
+    + this process can stabilize the mean of a time series by removing changes in the level of a time series
+    + most cases second order differencing is sufficient to make a series stationary
+    + recommended to never go beyond seconder differencing
+    
++ Auto regressive <- suggests a series current points to be dependent on previous points
++ ACF <- total correlation between different lag functions
+
+    + takes into consideration of all the past observations irrespective of its effect on the future or present time period
+    + calculates the correlation between the t and (t-k) time period. 
+    + includes all the lags or intervals between t and (t-k) time periods. 
+    + Correlation is always calculated using the Pearson Correlation formula.
+    
++ PACF <- the correlation between two lags irrespective of other lags in the series
+    
+    + determines the partial correlation between time period t and t-k
+    + does NOT take into consideration all the time lags between t and t-k
+    + only the time lags having a direct impact on future time period by neglecting the insignificant time lags in between the two-time slots t and t-k.
+    
++ First bar in every correlogram <- always equal to one as this is simply measuring the variable correlated with itself
++ Distinguishing between AR vs MA:
+
+    + Observe which graph falls below the significance line first. 
+    + If the PACF graph becomes insignificant before the ACF plot then the series is mostly an AR process
+
++ If the PACF becomes insignificant after the second lag, it is an AR(2) process
++ If the ACF plot becomes insignificant after the 2nd bar, it is mostly a MA(2) process
